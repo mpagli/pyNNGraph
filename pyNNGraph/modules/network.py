@@ -137,6 +137,21 @@ class Network(object):
         for moduleName in self.nodesTable:
             self.nodesTable[moduleName].reset_grad_param()
 
+    def training_mode_ON(self):
+        """When using dropout you need to set the train variable of the dropout module
+           to True only when training. Moreover, if you try to check the gradient with
+           train=True it will fail. 
+        """
+        for moduleName in self.nodesTable:
+            if hasattr(self.nodesTable[moduleName], 'train'):
+                self.nodesTable[moduleName].train = True
+
+    def training_mode_OFF(self):
+        """"""
+        for moduleName in self.nodesTable:
+            if hasattr(self.nodesTable[moduleName], 'train'):
+                self.nodesTable[moduleName].train = False
+
     def gradient_checking(self, eps=1e-6):
         """"""
         def get_goutputs(Xouts, ts, errN):
