@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     print "\n\nTraining ...\n"
     
-    #Training routine (200 epochs here)
+    #Training routine (50 epochs here)
     for it in xrange(50):
         loss = SGD(feval, params, optimConf, optimState)
         print "epoch ",it," loss: ",loss
