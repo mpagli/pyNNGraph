@@ -137,7 +137,7 @@ class Network(object):
         for moduleName in self.nodesTable:
             self.nodesTable[moduleName].reset_grad_param()
 
-    def gradient_checking(self, eps=1e-5):
+    def gradient_checking(self, eps=1e-6):
         """"""
         def get_goutputs(Xouts, ts, errN):
             gOutputs = []
@@ -196,7 +196,6 @@ class Network(object):
                         outs = self.forward(Xins)
                         errorMinus = get_error(outs, targets, errorNodes)
                         params[i] += eps
-                        print (errorPlus - errorMinus)/(2*eps)
                         approxGradParams[idx][i] = (errorPlus - errorMinus)/(2*eps)
                 else:
                     for i in xrange(params.shape[0]):

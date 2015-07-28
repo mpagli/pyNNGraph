@@ -6,16 +6,20 @@ from module import *
 class Linear(Module):
     """"""
 
-    def __init__(self, inputDim, outputDim):
+    def __init__(self, inputDim, outputDim, stdv=None):
         """"""
         super(Linear, self).__init__()
+        if not stdv :
+            self.stdv = 3./np.sqrt(inputDim)
+        else:
+            self.stdv = stdv
         self.inputDim = inputDim
         self.outputDim = outputDim
         #self.layerJacobian = np.ones((self.outputDim, self.inputDim)) #Since it's a linear layer the jacobian is the transposed of the weights matrix
-        self.weight = 0.01 * np.random.randn(inputDim, outputDim)
-        self.bias = 1. * np.random.randn(1, outputDim)
+        self.weight = np.random.uniform(-self.stdv, self.stdv, (inputDim, outputDim))
+        self.bias = np.random.uniform(-self.stdv, self.stdv, outputDim)
         self.gradWeight = np.zeros((inputDim, outputDim))
-        self.gradBias = np.zeros((1, outputDim))
+        self.gradBias = np.zeros(outputDim)
 
     def forward(self, Xin):
         """Forward the input vector Xin through the layer: output = W * Xin + bias"""
