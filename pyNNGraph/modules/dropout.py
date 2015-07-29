@@ -9,18 +9,19 @@ class Dropout(Module):
     def __init__(self, inputDim, p=0.5):
         """"""
         super(Dropout, self).__init__()
-        self.p = 1. - p
+        self.p = 1. - p #Probability of a value to be kept.
         self.inputDim = inputDim
         self.mask = np.array([])
-        self.train = True
+        self.train = True #If true then dropout is applied.
 
     def forward(self, Xin):
-        """Forward the input vector Xin through the layer: output = tanh(Xin) """
+        """Forward the input vector Xin through the layer: output = mask * Xin where '*' is the 
+           element-wise multiplication and mask is a vector of bernoulli samples."""
         if self.train:
             self.mask = np.random.binomial(1, self.p, self.inputDim)
             self.output = np.multiply(Xin, self.mask)
         else:
-            self.output = np.multiply(Xin, self.p)
+            self.output = np.multiply(Xin, self.p) #output is scaled when dropout is OFF.
         return self.output
 
     def backward(self, Xin, gradOutput):
