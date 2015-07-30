@@ -60,3 +60,8 @@ class Module(object):
     def reset_grad_param(self):
         """"""
         raise NotImplementedError("Subclass must implement abstract method")
+
+    def copy(self):
+        """"""
+        raise NotImplementedError("Subclass must implement abstract method")
+        

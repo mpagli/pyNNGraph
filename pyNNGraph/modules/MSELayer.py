@@ -52,6 +52,10 @@ class MSELayer(Module):
             similarity = relative_error(computedJacobian.reshape(self.inputDim * self.inputDim), np.diag(jacobian).reshape(self.inputDim * self.inputDim))
             print "Checking the jacobian matrix: ","ok" if similarity < eps else "error"
 
+    def copy(self, shareWeights):
+        """Return a new instance with similar parameters."""
+        return MSELayer(self.inputDim)
+
 def relative_error(vec1, vec2):
     return np.linalg.norm(vec1 - vec2)/np.linalg.norm(vec1 + vec2)
 

@@ -11,7 +11,7 @@ def get_progress_bar(loss, maxLoss, scale=50):
 if __name__ == "__main__":
     """To solve the XOR problem, let's build the following net:
 
-        Xin(2) --->Linear(2,3)--->Tanh(3)--->Linear(3,2)---> Out(1)
+        Xin(2) --->Linear(2,3)--->Tanh(3)--->Linear(3,2)---> Out(2)
 
     """
 

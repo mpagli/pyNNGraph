@@ -58,6 +58,13 @@ class Dropout(Module):
         """"""
         return
 
+    def copy(self, shareWeights):
+        """Return a new instance with similar parameters."""
+        newNode = Dropout(self.inputDim, self.p)
+        #newNode.receiveGradFrom = self.receiveGradFrom[:]
+        #newNode.receiveInputFrom = self.receiveInputFrom[:]
+        return newNode
+
 if __name__ == "__main__":
     pass
 

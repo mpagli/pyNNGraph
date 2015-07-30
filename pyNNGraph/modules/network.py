@@ -48,13 +48,22 @@ class Network(object):
         self.inputNodes = inputNodes
         self.outputNodes = outputNodes
         self.evaluationSequence = evaluationSequence
+        self.recConnexions = []
+        self.fwdConnexions = []
 
     def link_nodes(self, sourceNode, targetNode):
         """Create an oriented connexion between two nodes. The source node send the signal 
         forward, the target node send the derivative backward.
         """
+        self.fwdConnexions.append((sourceNode,targetNode))
         self.nodesTable[sourceNode].receiveGradFrom.append(targetNode)
         self.nodesTable[targetNode].receiveInputFrom.append(sourceNode)
+
+    def recurrent_connexion(self, sourceNode, targetNode):
+        """Create a connexion between the network and its copy at time t+1. Only effective
+        after a call to unwrap 
+        """
+        self.recConnexions.append((sourceNode, targetNode))
 
     def forward(self, Xins):
         """Forwards the inputs through the network. The Error is not computed here,
@@ -72,8 +81,10 @@ class Network(object):
             #A module can have several input module (e.g. CAddTable, CMulTable ...)
             if len(sources) > 1:
                 T[moduleName].forward([T[source].output for source in sources])
-            else:
+            elif len(sources) ==1:
                 T[moduleName].forward(T[sources[0]].output)
+            else: #by default if no source, we assume zeros vector (usefull for rnn)
+                T[moduleName].forward(np.zeros(T[moduleName].inputDim))
         #Now we passed trough all the nodes, we return the outputs 
         outputVector = [None]*len(self.outputNodes)
         for idx, outputName in enumerate(self.outputNodes):
@@ -106,8 +117,10 @@ class Network(object):
                 localGradOutputs = T[targets[0]].gradInput
             if len(sources) == 1:
                 localXins = T[sources[0]].output
-            else:
+            elif len(sources) > 1:
                 localXins = [T[source].output for source in sources]
+            else: #if no source then zero vector 
+                localXins = np.zeros(T[moduleName].inputDim)
             T[moduleName].backward(localXins, localGradOutputs)
         #Finally we need to propagate into the input nodes:
         for idx, inputName in enumerate(self.inputNodes):
@@ -137,6 +150,50 @@ class Network(object):
         for moduleName in self.nodesTable:
             self.nodesTable[moduleName].reset_grad_param()
 
+    def unwrap(self, seqLength):
+        """
+        """
+        if len(self.recConnexions) == 0:
+            return 
+        #Add all the missing nodes of the unwrapped net.
+        for nodeName in self.nodesTable.keys():
+            for t in xrange(1,seqLength):
+                prefix = '_t'+str(t)
+                newNodeName = nodeName + prefix
+                newNode = self.nodesTable[nodeName].copy(shareWeights=True)
+                self.nodesTable[newNodeName] = newNode
+        #Add all the forward connexions 
+        for sourceNode, targetNode in self.fwdConnexions[:]:
+            for t in xrange(1,seqLength):
+                prefix = '_t'+str(t)
+                self.link_nodes(sourceNode+prefix, targetNode+prefix)
+        #Add the new input nodes to self.inputNodes
+        for inputNode in self.inputNodes[:]:
+            for t in xrange(1,seqLength):
+                prefix = '_t'+str(t)
+                self.inputNodes.append(inputNode+prefix)
+        #Add the new output nodes to self.outputNodes
+        for outputNode in self.outputNodes[:]:
+            for t in xrange(1,seqLength):
+                prefix = '_t'+str(t)
+                self.outputNodes.append(outputNode+prefix)
+        #Add the recurrent connexions
+        for sourceName, targetName in self.recConnexions:
+            for t in xrange(0,seqLength-1):
+                if t > 0:
+                    prefixSource = '_t'+str(t)
+                else:
+                    prefixSource = ''
+                prefixTarget = '_t'+str(t+1)
+                self.link_nodes(sourceName+prefixSource, targetName+prefixTarget)
+        #modify the evaluation sequence
+        evalSeqCopy = self.evaluationSequence[:]
+        for t in xrange(1,seqLength): 
+            prefix = '_t'+str(t)
+            for nodeName in evalSeqCopy:
+                self.evaluationSequence.append(nodeName+prefix) 
+
+
     def training_mode_ON(self):
         """When using dropout you need to set the train variable of the dropout module
            to True only when training. Moreover, if you try to check the gradient with
@@ -151,6 +208,16 @@ class Network(object):
         for moduleName in self.nodesTable:
             if hasattr(self.nodesTable[moduleName], 'train'):
                 self.nodesTable[moduleName].train = False
+
+    def copy(self, shareWeights=False):
+        """Return a deep copy of the network"""
+        nodesTable = {}
+        for nodeName in self.nodesTable:
+            nodesTable[nodeName] = self.nodesTable[nodeName].copy(shareWeights)
+        inputNodes = self.inputNodes.copy()
+        outputNodes = self.outputNodes.copy()
+        evaluationSequence = self.evaluationSequence.copy()
+        return Network(nodesTable, inputNodes, outputNodes, evaluationSequence)
 
     def gradient_checking(self, eps=1e-6):
         """"""

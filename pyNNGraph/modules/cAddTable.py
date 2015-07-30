@@ -26,7 +26,7 @@ class CAddTable(Module):
            Output:
             - gradInput: d(Error)/d(output) * jacobian = d(Error)/d(Xin) = gradOutput for all paths.
         """
-        self.gradInput = [gradOutput for _ in Xins]
+        self.gradInput = gradOutput#[gradOutput for _ in Xins]
         return self.gradInput
 
     def parameters(self):
@@ -47,6 +47,13 @@ class CAddTable(Module):
             Jx = | d(out2)/d(x1) d(out2)/d(x2) | = | 0  1 | , idem for Jy.
         """
         return
+
+    def copy(self, shareWeights):
+        """Return a new instance with similar parameters."""
+        newNode = CAddTable(self.inputDim)
+        #newNode.receiveGradFrom = self.receiveGradFrom[:]
+        #newNode.receiveInputFrom = self.receiveInputFrom[:]
+        return newNode
 
 
 if __name__ == "__main__":

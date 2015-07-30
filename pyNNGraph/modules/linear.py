@@ -68,6 +68,18 @@ class Linear(Module):
             similarity = relative_error(computedJacobian.reshape(self.inputDim * self.outputDim), self.weight.reshape(self.inputDim * self.outputDim))
             print "Checking the jacobian matrix: ","ok" if similarity < eps else "error"
 
+    def copy(self, shareWeights):
+        """Return a new instance with similar parameters."""
+        newNode = Linear(self.inputDim, self.outputDim, self.stdv)
+        #newNode.receiveGradFrom = self.receiveGradFrom[:]
+        #newNode.receiveInputFrom = self.receiveInputFrom[:]
+        if shareWeights:
+            newNode.weight = self.weight
+            newNode.gradWeight = self.gradWeight
+            newNode.bias = self.bias
+            newNode.gradBias = self.gradBias
+        return newNode
+
 def relative_error(vec1, vec2):
     return np.linalg.norm(vec1 - vec2)/np.linalg.norm(vec1 + vec2)
 

@@ -65,6 +65,13 @@ class Tanh(Module):
             similarity = relative_error(estimatedJacobian.reshape(self.inputDim * self.inputDim), np.diag(self.jacobian).reshape(self.inputDim * self.inputDim))
             print "Checking the jacobian matrix: ","ok" if similarity < eps else "error"
 
+    def copy(self, shareWeights):
+        """Return a new instance with similar parameters."""
+        newNode = Tanh(self.inputDim)
+        #newNode.receiveGradFrom = self.receiveGradFrom[:]
+        #newNode.receiveInputFrom = self.receiveInputFrom[:]
+        return newNode
+
 def relative_error(vec1, vec2):
     return np.linalg.norm(vec1 - vec2)/np.linalg.norm(vec1 + vec2)
 

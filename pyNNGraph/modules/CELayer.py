@@ -64,6 +64,10 @@ class CELayer(Module):
             similarity = relative_error(estimatedGradInput, gradInput)
             print "Checking the jacobian matrix: ","ok" if similarity < eps else "error"
 
+    def copy(self, shareWeights):
+        """Return a new instance with similar parameters."""
+        return CELayer(self.inputDim)
+
 def relative_error(vec1, vec2):
     return np.linalg.norm(vec1 - vec2)/np.linalg.norm(vec1 + vec2)
     
@@ -72,4 +76,3 @@ if __name__ == "__main__":
 
     ce = CELayer(100)
     ce.jacobian_check()
-    
