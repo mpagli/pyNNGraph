@@ -4,4 +4,4 @@ Following the versatility of torch.nngraph, pyNNGraph allows you to create multi
 
 More to come ... 
 
-Check test.py for a small presentation.
+Check XOR.py or test.py for small presentations.
