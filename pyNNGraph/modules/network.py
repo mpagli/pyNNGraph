@@ -48,8 +48,8 @@ class Network(object):
         self.inputNodes = inputNodes
         self.outputNodes = outputNodes
         self.evaluationSequence = evaluationSequence
-        self.recConnexions = []
-        self.fwdConnexions = []
+        self.recConnexions = [] #stores tuples representing the recurrent connexions 
+        self.fwdConnexions = [] #stores tuples representing the forward connexions
 
     def link_nodes(self, sourceNode, targetNode):
         """Create an oriented connexion between two nodes. The source node send the signal 
@@ -81,7 +81,7 @@ class Network(object):
             #A module can have several input module (e.g. CAddTable, CMulTable ...)
             if len(sources) > 1:
                 T[moduleName].forward([T[source].output for source in sources])
-            elif len(sources) ==1:
+            elif len(sources) == 1:
                 T[moduleName].forward(T[sources[0]].output)
             else: #by default if no source, we assume zeros vector (usefull for rnn)
                 T[moduleName].forward(np.zeros(T[moduleName].inputDim))
@@ -150,9 +150,41 @@ class Network(object):
         for moduleName in self.nodesTable:
             self.nodesTable[moduleName].reset_grad_param()
 
+    def _save_copy_for_prediction(self):
+        """For the copy:
+            inputNodes = self.inputNodes + [recInput1, recInput2, ...] -> recInput1 = h1_{t-1}
+            outputNodes = self.outputNodes + [recOutput1, recOutput2, ...] -> recOutput1 = h1_{t} (saved for next timestep)
+        """
+        nodesTable = self.nodesTable.copy() #shallow copy of nodesTable, so we are reusing the same nodes
+        inputNodes = self.inputNodes[:]
+        outputNodes = self.outputNodes[:]
+        evaluationSequence = self.evaluationSequence[:]
+        self.recInputs = [] #contains the varying recurrent inputs 
+        for sourceName, targetName in self.recConnexions:
+            outputNodes.append(sourceName)
+            inputNodes.append(targetName)
+            evaluationSequence.remove(targetName)
+            inputDim = nodesTable[targetName].inputDim
+            self.recInputs.append(np.zeros(inputDim))
+        self.rnnCopy = Network(nodesTable, inputNodes, outputNodes, evaluationSequence)
+
+    def sequence_prediction(self, Xins):
+        """Use self.rnnCopy to feed an input while saving the hidden states. We can feed a sequence
+           element by element and get a prediction
+        """
+        outs = self.rnnCopy.forward(Xins+self.recInputs)
+        self.recInputs = outs[-len(self.recConnexions):]
+        return outs[:-len(self.recConnexions)]
+
+    def reset_recurrent_states(self):
+        """"""
+        for array in self.recInputs:
+            array.fill(0.)
+
     def unwrap(self, seqLength):
         """
         """
+        self._save_copy_for_prediction() #save a copy of the net to simply get predictions after learning 
         if len(self.recConnexions) == 0:
             return 
         #Add all the missing nodes of the unwrapped net.
@@ -191,7 +223,7 @@ class Network(object):
         for t in xrange(1,seqLength): 
             prefix = '_t'+str(t)
             for nodeName in evalSeqCopy:
-                self.evaluationSequence.append(nodeName+prefix) 
+                self.evaluationSequence.append(nodeName+prefix)
 
 
     def training_mode_ON(self):
