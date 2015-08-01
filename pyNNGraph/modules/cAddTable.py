@@ -26,7 +26,7 @@ class CAddTable(Module):
            Output:
             - gradInput: d(Error)/d(output) * jacobian = d(Error)/d(Xin) = gradOutput for all paths.
         """
-        self.gradInput = gradOutput#[gradOutput for _ in Xins]
+        self.gradInput = [gradOutput for _ in Xins]
         return self.gradInput
 
     def parameters(self):

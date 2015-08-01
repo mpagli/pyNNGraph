@@ -15,7 +15,9 @@ class CMulTable(Module):
 
     def forward(self, Xins):
         """Forward the input vectors Xins through the layer: output = multiply(Xins) """ 
-        self.output = np.multiply(Xins)
+        self.output = Xins[0].copy()
+        for idx in xrange(1,len(Xins)):
+            self.output *= Xins[idx]
         return self.output
 
     def backward(self, Xins, gradOutput):
@@ -24,12 +26,15 @@ class CMulTable(Module):
             - gradOutput: the derivative backpropagated d(Error)/d(output)
             - Xins: input vectors
            Output:
-            - gradInput: d(Error)/d(output) * jacobian = d(Error)/d(Xin) = gradOutput for all paths.
+            - gradInput: d(Error)/d(output) * jacobian .
         """
-        #Sorry for the list comprehension:
-        self.gradInput = [ np.multiply(gradOutput, np.multiply(np.array(\
-                         [x for j,x in enumerate(Xins) if i != j]\
-                         ))) for i in xrange(len(Xins)) ] 
+        if self.gradInput == []:
+            self.gradInput = [None]*len(Xins)
+        for i in xrange(len(Xins)):
+            self.gradInput[i] = gradOutput.copy()
+            for j in xrange(len(Xins)):
+                if i != j:
+                    self.gradInput[i] *= Xins[j]
         return self.gradInput
 
     def parameters(self):
@@ -68,7 +73,14 @@ class CMulTable(Module):
 
 
 if __name__ == "__main__":
-    pass
+    
+    m = CMulTable(3)
+
+    Xins = [np.array([1.,1.,2.]), np.array([1.,2.,3.])]
+
+    print m.forward(Xins)
+
+    print m.backward(Xins, np.array([2.,2.,2.]))
 
         
 

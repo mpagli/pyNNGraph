@@ -91,6 +91,19 @@ class Network(object):
             outputVector[idx] = T[outputName].output
         return outputVector
 
+    def _get_grad_output(self, sourceName, targetName):
+        """return the gradInput for the source node. Usefull for modules like CMulTable,
+           since the gradInput for this module depends on the multiples inputs.
+        """
+        T = self.nodesTable
+        if len(T[targetName].receiveInputFrom) == 1:
+            return T[targetName].gradInput
+        elif len(T[targetName].receiveInputFrom) > 1:
+            sourceIdx = T[targetName].receiveInputFrom.index(sourceName)
+            return T[targetName].gradInput[sourceIdx]
+        else: 
+            return #"throw error here"
+
     def backward(self, Xins, gradOutputs):
         """
             -Xins: vector of input vectors
@@ -111,10 +124,10 @@ class Network(object):
                 continue
             sources = T[moduleName].receiveInputFrom
             targets = T[moduleName].receiveGradFrom
-            if len(targets) > 1:
-                localGradOutputs = np.sum([T[target].gradInput for target in targets], axis=0)
+            if len(targets) > 1: #several gradients feeding to this node
+                localGradOutputs = np.sum([self._get_grad_output(moduleName, target) for target in targets], axis=0)
             else:
-                localGradOutputs = T[targets[0]].gradInput
+                localGradOutputs = self._get_grad_output(moduleName, targets[0]) 
             if len(sources) == 1:
                 localXins = T[sources[0]].output
             elif len(sources) > 1:
@@ -126,9 +139,9 @@ class Network(object):
         for idx, inputName in enumerate(self.inputNodes):
             targets = T[inputName].receiveGradFrom
             if len(targets) > 1:
-                localGradOutputs = np.sum([T[target].gradInput for target in targets], axis=0)
+                localGradOutputs = np.sum([self._get_grad_output(inputName, target) for target in targets], axis=0)
             else:
-                localGradOutputs = T[targets[0]].gradInput
+                localGradOutputs = self._get_grad_output(inputName, targets[0]) 
             T[inputName].backward(Xins[idx], localGradOutputs)
 
     def get_link_to_parameters(self):
