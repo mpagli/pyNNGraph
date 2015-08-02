@@ -38,9 +38,40 @@ class Tanh(Module):
         """"""
         return
 
-    def reset_grad_param(self):
+    def push_forward(self, nodesTable):
         """"""
-        return
+        if len(self.receiveInputFrom) == 1:
+            source = self.receiveInputFrom[0]
+            Xin = nodesTable[source].get_output(self.alias)
+            return self.forward(Xin)
+        elif len(self.receiveInputFrom) == 0: #assume zeros vector as input (usefull for recurrent nets)
+            return self.forward(np.zeros(self.inputDim))
+        else:
+            #throw error here
+            return
+
+    def push_backward(self, nodesTable, Xin=None):
+        """"""
+        if len(self.receiveGradFrom) == 1:
+            target = self.receiveGradFrom[0]
+            gradOutput = nodesTable[target].get_gradInput(self.alias)
+            return self.backward(None, gradOutput)
+        elif len(self.receiveGradFrom) == 0:
+            #throw error here
+            return
+        else:   #we add al the gradOutpus
+            gradOutput = np.zeros(self.inputDim)
+            for nodeName in self.receiveGradFrom:
+                gradOutput += nodesTable[nodeName].get_gradInput(self.alias)
+            return self.backward(None, gradOutput)
+
+    def get_gradInput(self, targetNode):
+        """"""
+        return self.gradInput
+
+    def get_output(self, sourceNode):
+        """"""
+        return self.output
 
     def compute_jacobian(self, Xin):
         """"""

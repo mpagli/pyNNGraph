@@ -75,7 +75,7 @@ if __name__ == "__main__":
         #FORWARD:
         outs = myNet.forward(seq)
 
-        errSum = sum([CEErr.forward(outs[i], classes[i]) for i in xrange(4)])
+        errSum = sum([CEErr.forward(outs[i], classes[i]) for i in xrange(4)])/4.0
 
         #BACKWARD:
         gradOutputs = [CEErr.backward(outs[i], classes[i]) for i in xrange(4)]
@@ -100,10 +100,10 @@ if __name__ == "__main__":
     maxLoss = 0.
 
     #Training routine:
-    optimConf = {'learningRate':0.9, 'learningRateDecay':0.001, 'momentum':0.5, 'weightDecay':0.99}
+    optimConf = {'learningRate':0.1, 'learningRateDecay':0.001, 'momentum':0.5, 'weightDecay':0.99}
     optimState = {} #Just a container to save the optimization related variables (e.g. the previous gradient...)
 
-    for it in xrange(100):
+    for it in xrange(300):
         loss = SGD(feval, params, optimConf, optimState)
         maxLoss = max(loss, maxLoss)
         print "epoch #"+str(it)+"\t"+get_progress_bar(loss, maxLoss)+' '+str(loss)

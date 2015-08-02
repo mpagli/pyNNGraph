@@ -45,6 +45,8 @@ class Network(object):
                         evaluationSequence = ['tanh1','tanh2','add','linear1','tanh3','linear2','tanh4']
         """
         self.nodesTable = nodesTable
+        for alias, node in self.nodesTable.items():
+            node.alias = alias
         self.inputNodes = inputNodes
         self.outputNodes = outputNodes
         self.evaluationSequence = evaluationSequence
@@ -77,32 +79,12 @@ class Network(object):
             T[inputName].forward(Xins[idx]) #the output of each module is saved in module.output
         #We then proceed to forward the inputs in the entire network
         for moduleName in self.evaluationSequence:
-            sources = T[moduleName].receiveInputFrom
-            #A module can have several input module (e.g. CAddTable, CMulTable ...)
-            if len(sources) > 1:
-                T[moduleName].forward([T[source].output for source in sources])
-            elif len(sources) == 1:
-                T[moduleName].forward(T[sources[0]].output)
-            else: #by default if no source, we assume zeros vector (usefull for rnn)
-                T[moduleName].forward(np.zeros(T[moduleName].inputDim))
+            T[moduleName].push_forward(T)
         #Now we passed trough all the nodes, we return the outputs 
         outputVector = [None]*len(self.outputNodes)
         for idx, outputName in enumerate(self.outputNodes):
             outputVector[idx] = T[outputName].output
         return outputVector
-
-    def _get_grad_output(self, sourceName, targetName):
-        """return the gradInput for the source node. Usefull for modules like CMulTable,
-           since the gradInput for this module depends on the multiples inputs.
-        """
-        T = self.nodesTable
-        if len(T[targetName].receiveInputFrom) == 1:
-            return T[targetName].gradInput
-        elif len(T[targetName].receiveInputFrom) > 1:
-            sourceIdx = T[targetName].receiveInputFrom.index(sourceName)
-            return T[targetName].gradInput[sourceIdx]
-        else: 
-            return #"throw error here"
 
     def backward(self, Xins, gradOutputs):
         """
@@ -122,27 +104,10 @@ class Network(object):
         for moduleName in self.evaluationSequence[::-1]: #We go backward
             if moduleName in self.outputNodes:
                 continue
-            sources = T[moduleName].receiveInputFrom
-            targets = T[moduleName].receiveGradFrom
-            if len(targets) > 1: #several gradients feeding to this node
-                localGradOutputs = np.sum([self._get_grad_output(moduleName, target) for target in targets], axis=0)
-            else:
-                localGradOutputs = self._get_grad_output(moduleName, targets[0]) 
-            if len(sources) == 1:
-                localXins = T[sources[0]].output
-            elif len(sources) > 1:
-                localXins = [T[source].output for source in sources]
-            else: #if no source then zero vector 
-                localXins = np.zeros(T[moduleName].inputDim)
-            T[moduleName].backward(localXins, localGradOutputs)
+            T[moduleName].push_backward(T)
         #Finally we need to propagate into the input nodes:
         for idx, inputName in enumerate(self.inputNodes):
-            targets = T[inputName].receiveGradFrom
-            if len(targets) > 1:
-                localGradOutputs = np.sum([self._get_grad_output(inputName, target) for target in targets], axis=0)
-            else:
-                localGradOutputs = self._get_grad_output(inputName, targets[0]) 
-            T[inputName].backward(Xins[idx], localGradOutputs)
+            T[inputName].push_backward(T, Xins[idx])
 
     def get_link_to_parameters(self):
         """Return a list of references to the weights and associated gradients. Carefull not
@@ -207,6 +172,7 @@ class Network(object):
                 newNodeName = nodeName + prefix
                 newNode = self.nodesTable[nodeName].copy(shareWeights=True)
                 self.nodesTable[newNodeName] = newNode
+                self.nodesTable[newNodeName].alias = newNodeName
         #Add all the forward connexions 
         for sourceNode, targetNode in self.fwdConnexions[:]:
             for t in xrange(1,seqLength):
@@ -288,9 +254,10 @@ class Network(object):
                 return np.linalg.norm(vec1 - vec2)/np.linalg.norm(vec1 + vec2)
 
         parametersList, gradParametersList = self.get_link_to_parameters()
+        print len(gradParametersList)
         T = self.nodesTable
         relativeErrList = []
-        for _ in xrange(20):
+        for _ in xrange(1):
             Xins = []
             targets = []
             self.reset_grad_param()

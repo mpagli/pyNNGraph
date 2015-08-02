@@ -45,6 +45,33 @@ class CMulTable(Module):
         """"""
         return
 
+    def push_forward(self, nodesTable):
+        """"""
+        Xins = [None]*len(self.receiveInputFrom)
+        for idx, nodeName in enumerate(self.receiveInputFrom):
+            Xins[idx] = nodesTable[nodeName].get_output(self.alias)
+        return self.forward(Xins)
+
+    def push_backward(self, nodesTable, Xins=[]):
+        """CAddTable can only recieve on gradInput, so if several sources of gradient exist they are summed."""
+        gradOutput = np.zeros(self.inputDim)
+        for nodeName in self.receiveGradFrom:   
+            gradOutput += nodesTable[nodeName].get_gradInput(self.alias)
+        if Xins == []:
+            Xins = [None]*len(self.receiveInputFrom)
+            for idx, nodeName in enumerate(self.receiveInputFrom):
+                Xins[idx] = nodesTable[nodeName].get_output(self.alias)
+        return self.backward(Xins, gradOutput)
+
+    def get_gradInput(self, targetNode):
+        """"""
+        idx = self.receiveInputFrom.index(targetNode)
+        return self.gradInput[idx]
+
+    def get_output(self, sourceNode):
+        """"""
+        return self.output
+
     def jacobian_check(self, eps=1e-5):
         """ Computing the jacobian: 
 

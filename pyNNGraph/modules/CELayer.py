@@ -46,6 +46,22 @@ class CELayer(Module):
         prob /= np.sum(prob)
         return prob 
 
+    def push_forward(self):
+        """"""
+        return
+
+    def push_backward(self):
+        """"""
+        return
+
+    def get_gradInput(self):
+        """"""
+        return
+
+    def get_output(self):
+        """"""
+        return
+
     def jacobian_check(self, eps=1e-5):
         """""" 
         for _ in xrange(100):

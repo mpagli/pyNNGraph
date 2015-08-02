@@ -26,7 +26,7 @@ class CAddTable(Module):
            Output:
             - gradInput: d(Error)/d(output) * jacobian = d(Error)/d(Xin) = gradOutput for all paths.
         """
-        self.gradInput = [gradOutput for _ in Xins]
+        self.gradInput = [gradOutput for _ in self.receiveInputFrom]
         return self.gradInput
 
     def parameters(self):
@@ -36,6 +36,29 @@ class CAddTable(Module):
     def reset_grad_param(self):
         """"""
         return
+
+    def push_forward(self, nodesTable):
+        """"""
+        Xins = [None]*len(self.receiveInputFrom)
+        for idx, nodeName in enumerate(self.receiveInputFrom):
+            Xins[idx] = nodesTable[nodeName].get_output(self.alias)
+        return self.forward(Xins)
+
+    def push_backward(self, nodesTable, Xin=None):
+        """CAddTable can only recieve on gradInput, so if several sources of gradient exist they are summed."""
+        gradOutput = np.zeros(self.inputDim)
+        for nodeName in self.receiveGradFrom:   
+            gradOutput += nodesTable[nodeName].get_gradInput(self.alias)
+        return self.backward(None, gradOutput)
+
+    def get_gradInput(self, targetNode):
+        """"""
+        idx = self.receiveInputFrom.index(targetNode)
+        return self.gradInput[idx]
+
+    def get_output(self, sourceNode):
+        """"""
+        return self.output
 
     def jacobian_check(self, eps=1e-5):
         """The jacobian is the identity. For two input vector x, y:

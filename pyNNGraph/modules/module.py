@@ -38,6 +38,7 @@ class Module(object):
         """
         self.gradInput = np.array([])
         self.output = np.array([])
+        self.alias = None
         self.receiveGradFrom = []   #used only with network.py
         self.receiveInputFrom = []  #used only with network.py
 
@@ -53,6 +54,22 @@ class Module(object):
         """"""
         raise NotImplementedError("Subclass must implement abstract method")
 
+    def push_forward(self):
+        """"""
+        raise NotImplementedError("Subclass must implement abstract method")
+
+    def push_backward(self):
+        """"""
+        raise NotImplementedError("Subclass must implement abstract method")
+
+    def get_gradInput(self):
+        """"""
+        raise NotImplementedError("Subclass must implement abstract method")
+
+    def get_output(self):
+        """"""
+        raise NotImplementedError("Subclass must implement abstract method")
+
     def jacobian_check(self):
         """"""
         raise NotImplementedError("Subclass must implement abstract method")
@@ -64,4 +81,3 @@ class Module(object):
     def copy(self):
         """"""
         raise NotImplementedError("Subclass must implement abstract method")
-        

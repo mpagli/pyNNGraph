@@ -26,6 +26,22 @@ class MSELayer(Module):
         self.gradInput = np.multiply(2.0, np.subtract(Xin, targets))
         return self.gradInput
 
+    def push_forward(self):
+        """"""
+        return
+
+    def push_backward(self):
+        """"""
+        return
+
+    def get_gradInput(self):
+        """"""
+        return
+
+    def get_output(self):
+        """"""
+        return
+
     def jacobian_check(self, eps=1e-5):
         """Check if the jacobian matrix is correct. For this layer since the jacobian matrix is diagonal
            and this layer being always at the end of a network, the jacobian matrix is not stored. It 
