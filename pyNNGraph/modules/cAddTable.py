@@ -47,7 +47,7 @@ class CAddTable(Module):
     def push_backward(self, nodesTable, Xin=None):
         """CAddTable can only recieve on gradInput, so if several sources of gradient exist they are summed."""
         gradOutput = np.zeros(self.inputDim)
-        for nodeName in self.receiveGradFrom:   
+        for nodeName in self.receiveGradFrom:  
             gradOutput += nodesTable[nodeName].get_gradInput(self.alias)
         return self.backward(None, gradOutput)
 

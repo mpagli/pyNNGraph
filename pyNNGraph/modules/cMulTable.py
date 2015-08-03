@@ -47,6 +47,9 @@ class CMulTable(Module):
 
     def push_forward(self, nodesTable):
         """"""
+        if len(self.receiveInputFrom) == 1:
+            self.output = np.zeros(self.inputDim)
+            return self.output
         Xins = [None]*len(self.receiveInputFrom)
         for idx, nodeName in enumerate(self.receiveInputFrom):
             Xins[idx] = nodesTable[nodeName].get_output(self.alias)
@@ -54,6 +57,9 @@ class CMulTable(Module):
 
     def push_backward(self, nodesTable, Xins=[]):
         """CAddTable can only recieve on gradInput, so if several sources of gradient exist they are summed."""
+        if len(self.receiveInputFrom) == 1:
+            self.gradInput = [np.zeros(self.inputDim)]
+            return self.gradInput
         gradOutput = np.zeros(self.inputDim)
         for nodeName in self.receiveGradFrom:   
             gradOutput += nodesTable[nodeName].get_gradInput(self.alias)

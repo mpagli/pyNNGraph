@@ -18,7 +18,7 @@ class SplitTable(Module):
         split = 0
         for idx,splitSize in enumerate(self.splitList):
             self.output[idx] = Xin[split:split+splitSize]
-            split = splitSize
+            split += splitSize
         return self.output
 
     def backward(self, Xin, gradOutputs):
@@ -78,11 +78,11 @@ class SplitTable(Module):
 
 if __name__ == "__main__":
     
-    split = SplitTable(2*2, [2, 2])
+    split = SplitTable(4*2, [2, 2, 2, 2])
 
-    print split.forward(np.array([1,2,3,4]))
+    print split.forward(np.array([1,2,3,4,5,6,7,8]))
 
-    print split.backward(None,split.forward(np.array([1,2,3,4])))
+    print split.backward(None,split.forward(np.array([1,2,3,4,5,6,7,8])))
 
         
 

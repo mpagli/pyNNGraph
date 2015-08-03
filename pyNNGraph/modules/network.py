@@ -254,7 +254,6 @@ class Network(object):
                 return np.linalg.norm(vec1 - vec2)/np.linalg.norm(vec1 + vec2)
 
         parametersList, gradParametersList = self.get_link_to_parameters()
-        print len(gradParametersList)
         T = self.nodesTable
         relativeErrList = []
         for _ in xrange(1):
