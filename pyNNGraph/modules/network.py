@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 import numpy as np
+import cPickle as pkl
 import MSELayer as mse
+import sparseLinear as sl
 
 class Network(object):
     """"""
@@ -230,6 +232,17 @@ class Network(object):
         evaluationSequence = self.evaluationSequence.copy()
         return Network(nodesTable, inputNodes, outputNodes, evaluationSequence)
 
+    def save(self, fileName):
+        """"""
+        with open(fileName, 'wb') as outStream:
+            pkl.dump(self, outStream, -1)
+
+    @staticmethod
+    def load(fileName):
+        """"""
+        with open(fileName, 'rb') as inStream:
+            return pkl.load(inStream)
+
     def gradient_checking(self, eps=1e-6):
         """"""
         def get_goutputs(Xouts, ts, errN):
@@ -262,7 +275,10 @@ class Network(object):
             self.reset_grad_param()
             #generate fake inputs:
             for inputName in self.inputNodes:
-                Xins.append(np.random.randn(T[inputName].inputDim))
+                if isinstance(self.nodesTable[inputName], sl.SparseLinear):
+                    Xins.append(np.random.randint(self.nodesTable[inputName].inputDim))
+                else:
+                    Xins.append(np.random.randn(T[inputName].inputDim))
             #generate fake targets:
             errorNodes = []
             for outputName in self.outputNodes:
