@@ -191,4 +191,47 @@ Check test_rnn.py and test_lstm.py for more examples.
 
 ##Building a language model
 
-Work in progress 
+Inspired from [char-rnn](https://github.com/karpathy/char-rnn) we can build a LSTM character-based language model. The dataset we are going to use consist of most of the Lovecraft novels. This is a rather small 1.1Mo dataset, here is a sample:
+
+> The older matters which had made the sculptor's dream and bas-relief so significant to my uncle formed the subject of the second half of his long manuscript. Once before, it appears, Professor Angell had seen the hellish outlines of the nameless monstrosity, puzzled over the unknown hieroglyphics, and heard the ominous syllables which can be rendered only as "Cthulhu"; and all this in so stirring and horrible a connexion that it is small wonder he pursued young Wilcox with queries and demands for data.
+
+The vocabulary is very rich and the sentences often quite long. Let's see how far we can get from this. We are going to use a two layer LSTM network, the size of the hidden layers is 200. Here are some results for different epochs:
+
+Initially, the network outputs a random character distribution:
+
+> krn30cnFvnggY1OZ7Kw?P8-5(C4-f1yplDc8.F2994,ifjhvWevDGwJ wE7ciQVp!Fsir2 pH"sPXUZs8vi)MNaSCd,yCFmSGC1,N,ni'FBv1:Eo'nsOsKEjlIisOF6Zi:o0:!QGETSa(C wZN'BGvS(yHAu( rFo!wtTyrulKz1wfimwujFy4-O4p)lsL17IA qq!fF
+
+After 200 epochs, the network has learnt a correct distribution:
+
+> ere an ar on de ee fhe bn or fn th the geit an the th bo aa tiim on won won wh we bas and tie on on on n tone an vas an th we ar bh w ta tas the whe whe we th we fore se ton wh ch te an th the toce wh
+
+After 400 epochs, some words start to make sense:
+
+> on anian he of of anpe sas an on the on the and the the seng an pofend he the Sone he fone I the of the on and and on ar the and the the on he af and on the whe the fed an and Ceror had fed and and wh
+
+After 3000 epochs:
+
+> ricederinger. The the and whin Was pring the was the frous the - be rein I he se the was in the valed of the hadestered be a coul congur he had the pren whin wher of andared dedered be fren a berered
+
+After 12400 epochs: 
+
+> an very and know of the shere along which and suld from by the sees the mose with and young he had the starich all the of the of the screst sunde and down the clus Allen I was the expenter - and by th
+
+Finally here is some text obtained from sampling the trained network:
+
+> strent up the with me he had a concert was a surved sugher the man and which he great and had found dement the had be stent the centre were he sughed the could the fling and the sten and lay and the special the skes of the great and the which the and and the of a the spin the rest sughing I was a distry of the for of the couring in the spunder my frouly be the before the dest which the sugher explate of the were a whin a southere the had the part the but he was the and muse and the regular and with and all the the lest a speched the strang the clanged of the speculated the wandering by the for for the perivered and and the time the speched the carese stoned the cres and the could the maning
+
+If it looks and sounds like english, the meaning is missing. Adding more parameters to our network might help. With a hidden size of 300 (previously 200):
+
+> he distrestering in a langed and in whiched by a comples the proved the specisive more resellen the indistanced the contround the but whiching the selinis were present thought such and the gedered the care. The light could he surfous mounted the of the distresting from and his his frour and all in the chered the were beside of a cloud the dreaded the but the still the sound such distingulfor began the noring of a distrestering of the he of the sound and decighteraller in the cry his late minoread and and fear of the mongrend the greater of one whichesher of the best became of the strend whiches the and and a bear the began's specimen the of the lest which he was the strend and with the such 
+
+With a hidden size of 400:
+
+> nd spect and of his planed the present my see of it which and in which in expecting of the for his under with the such a speciverest of a with the better while in the bear and special southare the strent and and was not and vere of which the long the regularity which the could could not and a some intent of the possin which we had a while and and will of a secured the more and a had to a comples the hands and seen the more with the providere and from a wing the country were the bestrand in the wing new and the and sent drears of the covered the mountains and found of the subtly and and the share of the seare the men to a sea from a many descrip of a light the supply of the of the are be the 
+
+Adding parameters allowed the rnn to learn more complicated features. The vocabulary is richer and the validation error went lower. For a small and complex dataset like ours, these results are satisfying. 
+
+
+
+
+
