@@ -227,7 +227,7 @@ It looks and sounds like english, however the meaning is missing. Adding more pa
 
 With a hidden size of 400:
 
-> nd belief and professed pass of probed the before mounds and nor the wind must fellin a properstressed a freng of the could the houseand He recorded the prish be a wing explanome he which the great Archant as he could of the fron more noted a gulf. The of the mound believer of in by of it which before. The real up the Whater the several the bethe with a more hard of the great the detin out of the could pring and he were the and before the mounting notic wholed a vision and Ward beneach whiled in the and seemed a subtly expected, as I perhe seemed whose definite and had betwes he was some house the mound with or the real the word the hole of his ground a could woul of the found of his strengr
+> secured the wing fron a hous and for the more which in the could genery which was which in a to he of the such the found the which the such the had the such in of a ground descriptic and for the intertive of my muse like desperaterely of the concluse he had a great him a monstrous more before which the pering of the best the distrang and the sound of the wing and be a did in the experiering the vichering and for a real and of the wild and could like his speciverent the thing and planed the creature and the hous which disposed and in his planered of a man beyond and like the seened a fearous by his wild in the hous a benely and the many of the was which shous of Dr. Allen and was the strent
 
 Adding parameters allowed the rnn to learn more complicated features. The vocabulary is richer and the validation error went lower. 
 
