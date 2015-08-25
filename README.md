@@ -129,6 +129,14 @@ The real goodness of pyNNGraph starts here, it is really easy to create and trai
 net.recurrent_connexion('nodeAlias1', 'nodeAlias2')
 ```
 
+You also need to take care of the initial recurrent hidden states `Hins`:
+
+```python
+outs, Hins = myNet.forward(seq, Hins) #forward the signal in the net, returns the standard outputs of
+                                      #the net as well as the last recurrent hidden states for the 
+                                      #current sequence 
+```
+
 To train the network you can then unwrap the network and handle it as you would handle a feed-forward net. For example, to build and train a simple RNN with one hidden layer:
 
 ```python
@@ -161,15 +169,18 @@ params, gradParams = myNet.get_link_to_parameters()
 CEE = CELayer(4)
 
 myNet.unwrap(4) #unwrap the network on 4 timesteps
+Hins = [np.zeros(3)] #initial recurrent hidden states 
 
 def feval(x):
+
+    global Hins
     myNet.reset_grad_param()
     err = 0.
 
     seq, targetSeq = get_next_sample()
 
     #FORWARD:
-    outs = myNet.forward(seq)
+    outs, Hins = myNet.forward(seq, Hins)
     err = sum([CEE.forward(outs[i], targetSeq[i]) for i in xrange(4)])/4.0
 
     #BACKWARD:
@@ -191,47 +202,46 @@ Check test_rnn.py and test_lstm.py for more examples.
 
 ##Building a language model
 
-Inspired from [char-rnn](https://github.com/karpathy/char-rnn) we can build a LSTM character-based language model. The dataset we are going to use consist of most of the Lovecraft novels. This is a rather small 1.1Mo dataset, here is a sample:
+Inspired from [char-rnn](https://github.com/karpathy/char-rnn) we can build a LSTM character-based language model. The dataset we are going to use consist of the Leo Tolstoy novel "War and peace". This is a rather small 3.2Mo dataset, here is a sample:
 
-> The older matters which had made the sculptor's dream and bas-relief so significant to my uncle formed the subject of the second half of his long manuscript. Once before, it appears, Professor Angell had seen the hellish outlines of the nameless monstrosity, puzzled over the unknown hieroglyphics, and heard the ominous syllables which can be rendered only as "Cthulhu"; and all this in so stirring and horrible a connexion that it is small wonder he pursued young Wilcox with queries and demands for data.
+> "Well, Prince, so Genoa and Lucca are now just family estates of the Buonapartes. But I warn you, if you don't tell me that this means war, if you still try to defend the infamies and horrors perpetrated by that Antichrist--I really believe he is Antichrist--I will have nothing more to do with you and you are no longer my friend, no longer my 'faithful slave,' as you call yourself! But how do you do? I see I have frightened you--sit down and tell me all the news." It was in July, 1805, and the speaker was the well-known Anna Pavlovna Scherer, maid of honor and favorite of the Empress Marya Fedorovna. With these words she greeted Prince Vasili Kuragin, a man of high rank and importance, who was the first to arrive at her reception.
 
-The vocabulary is very rich and the sentences often quite long. Let's see how far we can get with this. We are going to use a two layer LSTM network, the size of the hidden layers is 200. Here are some results for different epochs:
+Let's see how far we can get with this. The first network we are seting up has the following properties:
+
+* Number of hidden LSTM layers: 2
+* Size of each hidden layer: 300
+* Max length of sequences used during the BPTT: 50 characters
+* Minibatches size: 50
+* Dropout value: 0.3
+* Learning rate: 0.008
+* Gradient clipping value: 1.0
+* Error: cross-entropy
+* Optimization method: RMSprop
+
+The dataset is one big sequence of characters, it is split into several sequences of size 50. `feval` pushes forward 50 of those sequences and backpropagate the errors. For each sequence, the recurrent hidden states have to be initialized. For the first sequence of the dataset, we set those states to zeros vectors. Each time the `forward` method is called on the recurrent network, it returns the last recurrent hidden states of the current sequence, which can be used to initialize the recurrent hidden states of the next sequence. 
+
+Here are some results for different epochs:
 
 Initially, the network outputs a random character distribution:
 
-> krn30cnFvnggY1OZ7Kw?P8-5(C4-f1yplDc8.F2994,ifjhvWevDGwJ wE7ciQVp!Fsir2 pH"sPXUZs8vi)MNaSCd,yCFmSGC1,N,ni'FBv1:Eo'nsOsKEjlIisOF6Zi:o0:!QGETSa(C wZN'BGvS(yHAu( rFo!wtTyrulKz1wfimwujFy4-O4p)lsL17IA qq!fF
+> r0gl9o3ymtkhydEq?3C0*g*DQaD,mEtT;6'h-D9Z A47v1H!IAd66?Y,ZaNhY4HG=,POCzQ!")UP-Ne9)LvN?hLCed'7Wugbqaw*yM!1Ex'"G!5j( GOv/TroL4ecR:enWKEvn=V!bUe,hjm,JV/'9h/D9Bltc(z;dN5cD7E'ZaUCuGGywwP9oy*I*CYFxzRrYH7:J7CnA/5K4omT?gh?=;U6(nBjgvTs/SZ,fMvDbsWCA8NdgiYfBZ.AAvH55WkL6JuEeq0Mkya2EUJn5b-Nq9krJ9mEc3yVVf0Dnp.5S,02MazzcR7tfGp fNisb!jmOH sYJKOhSxcRFR 1wWMvc/4"LNSBY0DoftgP)Ia6CPsJn?UgS(C4agzwsb?NLJB"zkw-6pfJc2zBJ?P,P2v/vaya/oGYh!bv'ddr:AAEE"QGwO9cc(y;2!S)Wx36SvS)WbH"twJbX=d4ex!sEpZpAX3k?M.'FNSivq4-KJ.D7vtBtg:?qd
+
 
 After 200 epochs, the network has learnt a correct distribution:
 
-> ere an ar on de ee fhe bn or fn th the geit an the th bo aa tiim on won won wh we bas and tie on on on n tone an vas an th we ar bh w ta tas the whe whe we th we fore se ton wh ch te an th the toce wh
+> utn hos ond the teich to foog at bnd nns cint muut the fhut snd on wicnd Hn toet to lnsusns to mong sald hon sos the fhukg acl iugd hod the and bnrtang the tokced agd sand hh the ntoted send fiiv acv hind hof the shimg in aw teen mnd toe ans on ncrinn ns ond the sifrsd hns mnmfes tils anm hod anr ond ntid, mtins witn for shavd and tooacg bHd witn the whted to tint to fiand Wirnitod wad hat taon anv any fomd wate hh penngnd hn whon ond ant th hom sard he ig auand an waund lnd bnrngnn nnd in bntil
 
-After 400 epochs, some small words start to make sense:
+After 900 epochs, some small words start to make sense:
 
-> on anian he of of anpe sas an on the on the and the the seng an pofend he the Sone he fone I the of the on and and on ar the and the the on he af and on the whe the fed an and Ceror had fed and and wh
+> he ford who he ard the gund the dover sishing his bether the asserned the made of the the corl let whe had shas the the prethed the mast the cand and the corpor the was the bench of the bething srith it the the was the casted and the bele of as the inthe at the her the monged the deront to he ass the bich of and the word of the hers the her the sovered his and the her word of the whith the him and the ord his hams the gonky buct the came is ove whor the dinded of he renacing the comrent the the 
 
-After 3000 epochs:
+After 4800 epochs:
 
-> ricederinger. The the and whin Was pring the was the frous the - be rein I he se the was in the valed of the hadestered be a coul congur he had the pren whin wher of andared dedered be fren a berered
+> he French officer, but he had might see the Kutuzov continued in a proback state and could predecessing the between officer. When compost but are general displose and definite and and mind formed house and treated and had reply, for a but it was the referring of every borticy and the packer of the wound, and feeling and all would with the strength and something had been all under the officers, and army they say the French life of the commonsion had been whom the Russian Russian man were every me
 
-After 12400 epochs: 
+After 2700 epoch with a network of hidden size 512 (previously 300):
 
-> an very and know of the shere along which and suld from by the sees the mose with and young he had the starich all the of the of the screst sunde and down the clus Allen I was the expenter - and by th
+> The any shoulders, and of sulses with the enemy. The whole country should be looking at the first princess of his own whole soldiers for by the companions of his parent spilition of any all dount of the winders proposed to him. And and he may she went out to the looks. All it was not so is began come from the position of the into a door. They have to him. They gave the commander. The stronger despite it was a spite of the Prince Andrew and the Russian goner from the pables when could be party, the c
 
-Finally here is some text obtained from sampling the trained network:
-
-> strent up the with me he had a concert was a surved sugher the man and which he great and had found dement the had be stent the centre were he sughed the could the fling and the sten and lay and the special the skes of the great and the which the and and the of a the spin the rest sughing I was a distry of the for of the couring in the spunder my frouly be the before the dest which the sugher explate of the were a whin a southere the had the part the but he was the and muse and the regular and with and all the the lest a speched the strang the clanged of the speculated the wandering by the for for the perivered and and the time the speched the carese stoned the cres and the could the maning
-
-It looks and sounds like english, however the meaning is missing. Adding more parameters to our network might help. With a hidden size of 300 (previously 200):
-
-> ur and thing were the of the sardening were some stran and like the subbestanced the wing and single of prowithering whore and and in a paded the proble. It was seened and the residen and with all in care - the wing, the plan of remerged and generation. He had fest to in a content I were the one of a climalest brought grous pased the wing of the time he consture of the distrespent in the new and closerestres, when the present many parer entering and a paders the indeverice, my hight be become in the but expentich would on of a such in long and frightering and speciments and before of the sloped the care and scale in the sumpling and and himerate of in the and more menthingriphent concent the
-
-With a hidden size of 400:
-
-> secured the wing fron a hous and for the more which in the could genery which was which in a to he of the such the found the which the such the had the such in of a ground descriptic and for the intertive of my muse like desperaterely of the concluse he had a great him a monstrous more before which the pering of the best the distrang and the sound of the wing and be a did in the experiering the vichering and for a real and of the wild and could like his speciverent the thing and planed the creature and the hous which disposed and in his planered of a man beyond and like the seened a fearous by his wild in the hous a benely and the many of the was which shous of Dr. Allen and was the strent
-
-Adding parameters allowed the rnn to learn more complicated features. The vocabulary is richer and the validation error went lower. 
-
-
-
-
+Some models are still training. Relying only on numpy and without any GPU support, the computational time is very long compared to torch. 
 
