@@ -2,14 +2,15 @@
 
 import numpy as np
 from pyNNGraph import *
-import reader as rd
+import cPickle as pkl
+from reader import *
 
 def get_progress_bar(loss, maxLoss, scale=50):
     n = int(scale*loss/maxLoss)
     s = '|'+'X'*n+(scale-n)*'-'+'|'
     return s
 
-def clip_gradient(gradParams, maxValue=5.):
+def clip_gradient(gradParams, maxValue=1.):
     """"""
     for gradParam in gradParams:
         gradParam.clip(-maxValue,maxValue,gradParam)
@@ -34,7 +35,7 @@ def build_network(numLayers, inputSize, layersSize):
                 'frgt_c_mul'+str(i):CMulTable(layersSize),
                 'out_tanh'+str(i):Tanh(layersSize),
                 'out_out_mul'+str(i):CMulTable(layersSize),
-                'outDropout'+str(i):Dropout(layersSize, 0.3)
+                'outDropout'+str(i):Dropout(layersSize, 0.5)
                 })
         if i != 0:
             evaluationSequence += ['frwdLinear'+str(i)]
@@ -88,16 +89,36 @@ def build_network(numLayers, inputSize, layersSize):
 
     return myNet
 
-def get_error(net, data):
+def get_error(net, sequence):
     """"""
-    errSum = 0
-    for seq, target in data:
-        outs = myNet.forward(seq)
-        errors = [CEErr.forward(outs[i], target[i]) for i in xrange(SEQ_SIZE)]
-        errSum += sum(errors)
-    errSum /= float(SEQ_SIZE)*len(data)
-    return errSum
+    net.training_mode_OFF()
+    net.reset_recurrent_states()
+    errSum = 0.
+    idx = 0
+    while idx+1 < len(sequence):
+        outs = net.sequence_prediction([sequence[idx]])
+        target = sequence[idx+1]
+        errSum += CEErr.forward(outs[0], target)
+        idx += 1
+    net.training_mode_ON()
+    return errSum/len(sequence)
 
+def get_prediction(net, seed, numChars, temperature):
+    """"""
+    net.training_mode_OFF()
+    net.reset_recurrent_states()
+    prediction = list(seed)
+    for char in list(seed):
+        outs = net.sequence_prediction([dataset.dict[char]])
+        probs = CEErr.get_probabilities(np.divide(outs[0], temperature))
+        nextChar = dataset.inv_dict[np.argmax(np.random.multinomial(1,probs))]
+    for _ in xrange(numChars):
+        outs = net.sequence_prediction([dataset.dict[nextChar]])
+        probs = CEErr.get_probabilities(np.divide(outs[0], temperature))
+        nextChar = dataset.inv_dict[np.argmax(np.random.multinomial(1,probs))]
+        prediction.append(nextChar)
+    net.training_mode_ON()
+    return ''.join(prediction)
 
 if __name__ == "__main__":
     """In this example we are going to build a character-based language model:
@@ -148,38 +169,36 @@ if __name__ == "__main__":
     """
 
     SEQ_SIZE = 50
-    STEP_SIZE = 30
-    MINIBATCH_SIZE = 40
-    CHECK_VAL_EVERY = 20 #Check the validation error every 20 epochs
-    SAVE_AS = "languageModel_LSTM.pkl"
+    NUM_LAYERS = 2
+    HIDDEN_SIZE = 300
+    MINIBATCH_SIZE = 50
+    CHECK_VAL_EVERY = 300 #Check the validation error every 20 epochs
+    SAVE_AS = "languageModel_LSTM_warAndPeace.pkl"
 
     #Fetching the data
-    dataset = rd.Reader('data/lovecraft.txt', SEQ_SIZE, STEP_SIZE)
+    with open('./dataset_WAndP.pkl', 'rb') as inStream:
+        dataset = pkl.load(inStream)
+
+    trainSet = dataset.trainSet
+    validSet = dataset.validSet
+
     inputSize = dataset.get_vocabulary_size()
-
-    data = [(seq,target) for seq, target in zip(dataset.sequences, dataset.targets)]
-    np.random.shuffle(data)
-
-    split = int(0.95*len(data))
-    trainSet = data[:split]
-    validSet = data[split:]
-
-    del data
 
     print "\nTraining set size:", len(trainSet)
     print "Validation set size:", len(validSet)
     print ""
 
     #Creating the network
-    myNet = build_network(2, inputSize, 100)
+    myNet = build_network(NUM_LAYERS, inputSize, HIDDEN_SIZE)
     CEErr = CELayer(inputSize)
 
     #get lists of references to parameters of the network
     params, gradParams = myNet.get_link_to_parameters()
 
-    myNet.unwrap(50) #unwrap the network on 50 timesteps 
+    myNet.unwrap(SEQ_SIZE) #unwrap the network on 50 timesteps 
 
     dataInc = 0
+    Hins = [np.zeros(HIDDEN_SIZE) for _ in xrange(2*NUM_LAYERS)] #initial Hidden states
 
     myNet.training_mode_ON()
 
@@ -189,25 +208,29 @@ if __name__ == "__main__":
         myNet.reset_grad_param()
         errSum = 0.
         global dataInc
+        global Hins
 
         for i in xrange(MINIBATCH_SIZE):
 
-            currentIdx = (dataInc + i)%len(trainSet)
-            currentSequence = trainSet[currentIdx][0]
-            currenttarget = trainSet[currentIdx][1]
+            currentSequence = trainSet[dataInc:dataInc+SEQ_SIZE]
+            currentTarget = trainSet[dataInc+1:dataInc+SEQ_SIZE+1]
+            dataInc += SEQ_SIZE
 
             #FORWARD:
-            outs = myNet.forward(currentSequence)
+            outs, Hins = myNet.forward(currentSequence, Hins)
 
-            errors = [CEErr.forward(outs[i], currenttarget[i]) for i in xrange(SEQ_SIZE)]
+            errors = [CEErr.forward(outs[i], currentTarget[i]) for i in xrange(SEQ_SIZE)]
             errSum += sum(errors)
 
             #BACKWARD:
-            gradOutputs = [CEErr.backward(outs[i], currenttarget[i]) for i in xrange(SEQ_SIZE)]
+            gradOutputs = [CEErr.backward(outs[i], currentTarget[i]) for i in xrange(SEQ_SIZE)]
             myNet.backward(currentSequence, gradOutputs)
 
+            if dataInc+SEQ_SIZE >= len(trainSet):
+                dataInc = 0
+                Hins = [np.zeros(HIDDEN_SIZE) for _ in xrange(2*NUM_LAYERS)]
+
         clip_gradient(gradParams)
-        dataInc += MINIBATCH_SIZE
         errSum /= float(MINIBATCH_SIZE)*float(SEQ_SIZE)
 
         return errSum, gradParams
@@ -217,17 +240,20 @@ if __name__ == "__main__":
     minValidLoss = 1e+10 
 
     #Training routine:
-    optimConf = {'learningRate':0.002, 'decayRate':0.99}
-    optimState = {} #Just a container to save the optimization related variables (e.g. the previous gradient...)
+    optimConf = {'learningRate':0.008, 'decayRate':0.95}
+    optimState = {} 
 
-    for it in xrange(1, 10000):
+    print get_prediction(myNet, "The ", 500, .9)
+    for it in xrange(1, 50000):
         loss = RMSprop(feval, params, optimConf, optimState)
         maxLoss = max(loss, maxLoss)
         print "epoch #"+str(it)+"\t"+get_progress_bar(loss, maxLoss)+' '+str(loss)
+        if it == 5000:  #basic learning rate decay
+            optimConf['learningRate'] = 0.004
+        if it == 10000:
+            optimConf['learningRate'] = 0.001
         if it % CHECK_VAL_EVERY == 0: #compute the validation error
-            myNet.training_mode_OFF()
             validError = get_error(myNet, validSet)
-            myNet.training_mode_OFF()
             minValidLoss = min(minValidLoss, validError)
             print "\t\tValidation error:", validError,
             if validError == minValidLoss:
@@ -235,12 +261,9 @@ if __name__ == "__main__":
                 myNet.save(SAVE_AS)
             else:
                 print ""
-        if loss < 1e-5:
+            print get_prediction(myNet, "The ", 500, .9)
+        if loss < 1e-2:
             print "\nTraining over."
             break
     
 
-    """ EXCPECTED OUTPUT:
-
-  
-    """

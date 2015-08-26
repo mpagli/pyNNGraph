@@ -4,6 +4,7 @@ import numpy as np
 import cPickle as pkl
 import MSELayer as mse
 import sparseLinear as sl
+import identity
 
 class Network(object):
     """"""
@@ -54,6 +55,8 @@ class Network(object):
         self.evaluationSequence = evaluationSequence
         self.recConnexions = [] #stores tuples representing the recurrent connexions 
         self.fwdConnexions = [] #stores tuples representing the forward connexions
+        self.recInitNodes = []  #stores the aliases of the recurrent input nodes
+        self.recEndNodes = []   #stores the aliases of the recurrent output nodes
 
     def link_nodes(self, sourceNode, targetNode):
         """Create an oriented connexion between two nodes. The source node send the signal 
@@ -69,7 +72,7 @@ class Network(object):
         """
         self.recConnexions.append((sourceNode, targetNode))
 
-    def forward(self, Xins):
+    def forward(self, Xins, Hins=False):
         """Forwards the inputs through the network. The Error is not computed here,
            it is computed by external modules. 
             -Xins: a vector containing the input vectors. The order is the same
@@ -79,14 +82,30 @@ class Network(object):
         #We start at the input nodes:
         for idx, inputName in enumerate(self.inputNodes):
             T[inputName].forward(Xins[idx]) #the output of each module is saved in module.output
+        #If we have some hidden states to initialize:
+        if self.recInitNodes != []:
+            if Hins:
+                for idx, hiddenName in enumerate(self.recInitNodes):
+                    T[hiddenName].forward(Hins[idx])
+            else: #by default initialized to zeros()
+                for idx, hiddenName in enumerate(self.recInitNodes):
+                    T[hiddenName].forward(np.zeros(T[hiddenName].inputDim))
         #We then proceed to forward the inputs in the entire network
         for moduleName in self.evaluationSequence:
+            if Hins and moduleName in self.recInitNodes:
+                continue
             T[moduleName].push_forward(T)
         #Now we passed trough all the nodes, we return the outputs 
         outputVector = [None]*len(self.outputNodes)
         for idx, outputName in enumerate(self.outputNodes):
             outputVector[idx] = T[outputName].output
-        return outputVector
+        if Hins == False:
+            return outputVector
+        else:
+            finalHiddenStates = [None]*len(self.recEndNodes)
+            for idx, hiddenName in enumerate(self.recEndNodes):
+                finalHiddenStates[idx] = T[hiddenName].output
+            return outputVector, finalHiddenStates
 
     def backward(self, Xins, gradOutputs):
         """
@@ -141,9 +160,8 @@ class Network(object):
         evaluationSequence = self.evaluationSequence[:]
         self.recInputs = [] #contains the varying recurrent inputs 
         for sourceName, targetName in self.recConnexions:
+            inputNodes.append(targetName+'_Input')
             outputNodes.append(sourceName)
-            inputNodes.append(targetName)
-            evaluationSequence.remove(targetName)
             inputDim = nodesTable[targetName].inputDim
             self.recInputs.append(np.zeros(inputDim))
         self.rnnCopy = Network(nodesTable, inputNodes, outputNodes, evaluationSequence)
@@ -164,11 +182,20 @@ class Network(object):
     def unwrap(self, seqLength):
         """
         """
+	shadowNodes = set([])
+        for sourceName, targetName in self.recConnexions:
+            #store the names of the first hidden nodes in recInitNodes
+            self.nodesTable[targetName+'_Input'] = identity.Identity(self.nodesTable[targetName].inputDim)
+            self.recInitNodes.append(targetName+'_Input')
+	    shadowNodes.add(targetName+'_Input')
+            self.link_nodes(targetName+'_Input', targetName)
         self._save_copy_for_prediction() #save a copy of the net to simply get predictions after learning 
         if len(self.recConnexions) == 0:
             return 
         #Add all the missing nodes of the unwrapped net.
         for nodeName in self.nodesTable.keys():
+	    if nodeName in shadowNodes:
+		continue
             for t in xrange(1,seqLength):
                 prefix = '_t'+str(t)
                 newNodeName = nodeName + prefix
@@ -177,6 +204,8 @@ class Network(object):
                 self.nodesTable[newNodeName].alias = newNodeName
         #Add all the forward connexions 
         for sourceNode, targetNode in self.fwdConnexions[:]:
+	    if sourceNode in shadowNodes:
+		continue
             for t in xrange(1,seqLength):
                 prefix = '_t'+str(t)
                 self.link_nodes(sourceNode+prefix, targetNode+prefix)
@@ -192,6 +221,8 @@ class Network(object):
                 self.outputNodes.append(outputNode+prefix)
         #Add the recurrent connexions
         for sourceName, targetName in self.recConnexions:
+            #store the names of the last hidden nodes in recEndNodes
+            self.recEndNodes.append(sourceName+'_t'+str(seqLength-1))
             for t in xrange(0,seqLength-1):
                 if t > 0:
                     prefixSource = '_t'+str(t)
@@ -205,6 +236,8 @@ class Network(object):
             prefix = '_t'+str(t)
             for nodeName in evalSeqCopy:
                 self.evaluationSequence.append(nodeName+prefix)
+        #for nodeName in self.recInitNodes:
+        #    self.evaluationSequence.remove(nodeName)
 
 
     def training_mode_ON(self):

@@ -145,7 +145,7 @@ if __name__ == "__main__":
         errSum = 0.
 
         #FORWARD:
-        outs = myNet.forward(seq)
+        outs, _ = myNet.forward(seq, [np.zeros(hiddenSize), np.zeros(hiddenSize)])
 
         errors = [CEErr.forward(outs[i], classes[i]) for i in xrange(4)]
         errSum = sum(errors)/4.0
