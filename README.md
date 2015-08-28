@@ -239,7 +239,7 @@ After 4800 epochs:
 
 > he French officer, but he had might see the Kutuzov continued in a proback state and could predecessing the between officer. When compost but are general displose and definite and and mind formed house and treated and had reply, for a but it was the referring of every borticy and the packer of the wound, and feeling and all would with the strength and something had been all under the officers, and army they say the French life of the commonsion had been whom the Russian Russian man were every me
 
-After 10000+ iterations:
+After 10000+ epochs:
 
 > down them on the provence, and in the soul of the God and the morning who had in Moscow impression of the Mausity presence, firmly so supposing away to the officer and interrupted and with a battle at Marya Ever but in reaching part and began to have wounded and fan on the shoulders with the movement of a face of the princess with the experience. But Boris' man was not himself were some more sent consideration, and a word of the dignity of the old and officer he stood to the personal position of the sound. All the best soldiers and some look of before the play and he was certain suppositions to the army and having saying: "Oh, it was only sent on a trust, and impossible: Mary Even the strange interprefing for him and ordered the time on the whole day. She will be in legs, and to be because the soldiers were saying. On the sumprister from Sonya's look of all and far in the Emperor in the fellow and staying of the God and for the countess and he say on the Emperor's father's commander o
 
