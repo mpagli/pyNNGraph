@@ -243,9 +243,14 @@ After 10000+ epochs:
 
 > down them on the provence, and in the soul of the God and the morning who had in Moscow impression of the Mausity presence, firmly so supposing away to the officer and interrupted and with a battle at Marya Ever but in reaching part and began to have wounded and fan on the shoulders with the movement of a face of the princess with the experience. But Boris' man was not himself were some more sent consideration, and a word of the dignity of the old and officer he stood to the personal position of the sound. All the best soldiers and some look of before the play and he was certain suppositions to the army and having saying: "Oh, it was only sent on a trust, and impossible: Mary Even the strange interprefing for him and ordered the time on the whole day. She will be in legs, and to be because the soldiers were saying. On the sumprister from Sonya's look of all and far in the Emperor in the fellow and staying of the God and for the countess and he say on the Emperor's father's commander o
 
-After 2700 epoch with a network of hidden size 512 (previously 300):
+After 2700 epochs with a network of hidden size 512 (previously 300):
 
 > The any shoulders, and of sulses with the enemy. The whole country should be looking at the first princess of his own whole soldiers for by the companions of his parent spilition of any all dount of the winders proposed to him. And and he may she went out to the looks. All it was not so is began come from the position of the into a door. They have to him. They gave the commander. The stronger despite it was a spite of the Prince Andrew and the Russian goner from the pables when could be party, the c
+
+After 5000 epochs:
+
+> The last sound of this with the state of a strength of the corps for the event turned off the study, having a back of that passions and the pricition of the borzois were accompanied over his personal human supposition and felt that some side of people only one can see themselves to human hurried most place. The governor of his crowd and was no one soul he had been terrible because he was stopped in the first time were when something down in the Pressing news, noticed by the whole because seemed from the army shakp. Princess Mary could not wear the army, on the shable to the same time and because she was concerned that we thought of the Emperor, going to the death--and all it was stretching the war of the first and march of his way there was dispited by the crowd of things. On her look, and they had no one an exception of the ranks of the room and strange the strength, and were silent in the Russian crowding more attention. The princess was dispositive and he now graciously appeared to t
+
 
 Some models are still training. Relying only on numpy and without any GPU support, the computational time is very long compared to torch. 
 
