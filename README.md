@@ -1,4 +1,4 @@
-#PyNNGraph
+# PyNNGraph
 
 Following the versatility of torch.nngraph, pyNNGraph allows you to create multiple inputs/outputs feed-forward and recurrent neural networks.
 
@@ -9,7 +9,7 @@ PyNNGraph is very similar to torch, in order to train a network you need four th
 * An evaluation function to circle through the dataset and compute the gradient of the error with respect to the parameters of the networks. 
 * An optimization method to minimize the error by tuning the parameters of the network accordingly. 
 
-##Building a network
+## Building a network
 
 With pyNNGraph you can create complex networks by combining multiples modules together. For example here is a network that can be used to solve the XOR problem:
 
@@ -58,9 +58,9 @@ The whole point of having this repetitive synthax is to have versatility in the 
 
 Once the network has been initialized, we can use the `forward` and `backward` methods. `forward(inputList)` computes the outputs of the network for the given `inputList` of inputs. The order inside this list should match the `inputNodes` list previously defined. `backward(inputList, gradOutputs)` propagates the error derivatives backward in the network, it is responsible for __accumulating__ the gradient of the error with respect to the parameters of the network. Its parameters are the `inputList` as previously introduced, and `gradOutputs`, the derivative or the error with respect to the outputs of the network. 
 
-##Getting the error derivatives
+## Getting the error derivatives
 
-PyNNGraph only have two error metrics available at the moment:
+PyNNGraph only has two error metrics available at the moment:
 
 * Mean Squared Error: the good old MSE, `MSE(netOutput, targetVec) = (netOutput - targetVec)^2`
 
@@ -79,7 +79,7 @@ PyNNGraph only have two error metrics available at the moment:
     dEdOuts = MSE.backward(netOutput, targetClass) 
     ```
 
-##Building an evaluation function
+## Building an evaluation function
 
 The role of the evaluation function is to compute the error and gradient for one minibatch. The prototype of this function should be `loss, gradParams = feval(params)` where `loss` is the error return for the current minibatch, `gradParams` and `params` are lists of references to respectively the parameters' gradient and the parameters (can be obtained with `Network.get_link_to_parameters()`). `params` represent the state of a network, it is `params` we want to tune. 
 
@@ -104,7 +104,7 @@ def feval(x):
 ```
 The evaluation function is given to the optimizer.
 
-##Choosing an optimizer
+## Choosing an optimizer
 
 The role of the optimizer is to tune the parameters of the network to minimize the error metric. The most classic method to do thid is gradient descent. A more performant method for classification tasks might be RMSprop. Both methods are implemented in pyNNGraph. Each optimizer has the following prototype:
 
@@ -121,7 +121,7 @@ for it in xrange(1000): #perform the training
     loss = SGD(feval, params, optimConf, optimState)
 ```
 
-##Recurrent Neural Networks
+## Recurrent Neural Networks
 
 The real goodness of pyNNGraph starts here, it is really easy to create and train recurrent networks. Simply create a recurrent connexion where needed:
 
@@ -200,7 +200,7 @@ Once the training is done, the `Network.sequence_prediction(inputList)` method c
 
 Check test_rnn.py and test_lstm.py for more examples. 
 
-##Building a language model
+## Building a language model
 
 Inspired from [char-rnn](https://github.com/karpathy/char-rnn) we can build a LSTM character-based language model. The dataset we are going to use consist of the Leo Tolstoy novel "War and peace". This is a rather small 3.2Mo dataset, here is a sample:
 
